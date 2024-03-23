@@ -7,6 +7,6 @@ ADD tests tests
 ADD pyproject.toml pyproject.toml
 ADD setup.py setup.py
 
-RUN pip install -e .
+# RUN pip install -e .
 
-ENTRYPOINT ["external-dns-mikrotik-webhook", "webhook-server"]
+# ENTRYPOINT ["external-dns-mikrotik-webhook", "webhook-server"]

@@ -225,10 +225,11 @@ def test_to_api_attribute_fails_if_key_wrong_format():
     assert "key missing . prefix: id" in str(e.value)
 
 
+local_folder = pathlib.Path(__file__).parent.parent.joinpath("local")
+
+
 def client_from_json() -> mikrotik.Client:
-    settings_file = pathlib.Path(__file__).parent.joinpath(
-        "test_mikrotik_integration.json"
-    )
+    settings_file = local_folder.joinpath("test_mikrotik_integration.json")
     settings = json.loads(settings_file.read_text())
     client = mikrotik.Client(
         host=settings["host"],

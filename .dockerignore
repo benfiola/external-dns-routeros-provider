@@ -10,5 +10,5 @@
 # ignore IDE files
 **/.vscode
 
-# ignore sensitive local data
-/local/test_mikrotik_integration.json
+# ignore local folder
+/local
