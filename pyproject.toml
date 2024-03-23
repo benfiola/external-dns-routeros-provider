@@ -1,0 +1,22 @@
+[project]
+name = "external-dns-mikrotik-webhook"
+version = "0.0.1"
+dependencies = [
+    "click",
+    "fastapi",
+    "pydantic",
+    "pytest",
+    "pytest-asyncio",
+    "uvloop",
+    "uvicorn"
+]
+
+[project.scripts]
+external-dns-mikrotik-webhook = "external_dns_mikrotik_webhook.cli:main"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+asyncio_mode = "auto"
+testpaths = [
+    "tests"
+]
