@@ -113,6 +113,20 @@ def validation_exception_handler(
     return fastapi.exception_handlers.request_validation_exception_handler(request, exc)
 
 
+class Config(uvicorn.config.Config):
+    """
+    Custom uvicorn.config.Config class.
+
+    Used during the call to `Webhook.run()`.
+    """
+
+    def configure_logging(self) -> None:
+        """
+        Prevents uvicorn from overwriting the application's logging configuration.
+        """
+        pass
+
+
 class Webhook(fastapi.FastAPI):
     """
     Implements the ASGI application exposing the webhooks required for external DNS.
@@ -207,8 +221,3 @@ class Webhook(fastapi.FastAPI):
         )
         server = uvicorn.server.Server(config)
         await server.serve()
-
-
-class Config(uvicorn.config.Config):
-    def configure_logging(self) -> None:
-        pass
