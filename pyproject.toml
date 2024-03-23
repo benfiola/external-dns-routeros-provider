@@ -20,3 +20,6 @@ asyncio_mode = "auto"
 testpaths = [
     "tests"
 ]
+
+[tool.setuptools.packages.find]
+include = ["external_dns_mikrotik_webhook"]

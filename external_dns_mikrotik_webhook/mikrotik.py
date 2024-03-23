@@ -466,12 +466,17 @@ class Connection:
                 ]
 
                 # authenticate with routeros
-                await self.send(
-                    "/login",
-                    f"=name={self.username}",
-                    f"=password={self.password}",
-                    stream=self.stream,
-                )
+                try:
+                    response = await self.send(
+                        "/login",
+                        f"=name={self.username}",
+                        f"=password={self.password}",
+                        stream=self.stream,
+                    )
+                    response.raise_for_error()
+                except Exception as e:
+                    asyncio.create_task(self.close())
+                    raise e
 
             return self.stream
 
