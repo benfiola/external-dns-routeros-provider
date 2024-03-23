@@ -31,7 +31,7 @@ arg_push=""
 if [ "${push}" = "1" ]; then
     arg_push="--push"
 fi
-command="docker buildx build --platform linux/arm64 --platform linux/amd64 --load --tag ${image}:${version} ${arg_latest} ${arg_push} ."
+command="docker buildx build --platform linux/arm64 --platform linux/amd64 --tag ${image}:${version} ${arg_latest} ${arg_push} ."
 
 echo "version: ${version}"
 echo "latest: ${latest}"
