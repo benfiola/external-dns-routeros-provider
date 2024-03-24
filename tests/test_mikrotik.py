@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import enum
 import json
 import pathlib
 
@@ -197,8 +198,11 @@ async def test_response_get_error_data_returns_trap_sentence_attributes():
 
 
 def test_to_attribute_words_produces_correct_output():
-    raw = {"str": "a", "int": 1, "bool": True, "none": None}
-    expecteds = {"str": "a", "int": "1", "bool": "true", "none": ""}
+    class Enum(str, enum.Enum):
+        VALUE = "value"
+
+    raw = {"str": "a", "int": 1, "bool": True, "none": None, "enum": Enum.VALUE}
+    expecteds = {"str": "a", "int": "1", "bool": "true", "none": "", "enum": "value"}
     words = mikrotik.to_attribute_words(raw)
     for word in words:
         parts = word.split("=")

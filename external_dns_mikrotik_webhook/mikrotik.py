@@ -675,9 +675,12 @@ def to_word_value(value: Any) -> str:
     # NOTE: str(None) is 'None', should be ''
     if value is None:
         return ""
-    # NOTE: 'str(bool) -> 'True/False', should be 'true/false'
+    # NOTE: str(bool) -> 'True/False', should be 'true/false'
     if isinstance(value, bool):
         return "true" if value else "false"
+    # NOTE: str(<enum>) -> '<EnumClass.VALUE>', should be 'str(<enum>.value)'
+    if isinstance(value, enum.Enum):
+        return to_word_value(value.value)
     return str(value)
 
 
