@@ -475,6 +475,8 @@ class Connection:
                     )
                     response.raise_for_error()
                 except Exception as e:
+                    # attempt cleanup since login failed
+                    # do not await the task (`close()` needs to acquire the `stream_lock`)
                     asyncio.create_task(self.close())
                     raise e
 
@@ -552,7 +554,8 @@ class Client:
         """
         Deletes an IPV4 dns records registered with routeros by id
         """
-        words = ["/ip/dns/static/remove", f"=numbers={ip_dns_record.id}"]
+        data = {"numbers": ip_dns_record.id}
+        words = ["/ip/dns/static/remove", *to_attribute_words(data)]
         response = await self.connection.send(*words)
         response.raise_for_error()
 
@@ -560,7 +563,10 @@ class Client:
         """
         Lists IPV4 dns records registered with routeros
         """
-        response = await self.connection.send("/ip/dns/static/print", "=detail=")
+        data = {"detail": None}
+        response = await self.connection.send(
+            "/ip/dns/static/print", *to_attribute_words(data)
+        )
         response.raise_for_error()
         model_cls: pydantic.TypeAdapter[IpDnsRecord] = pydantic.TypeAdapter(IpDnsRecord)
         raw = response.get_data()
