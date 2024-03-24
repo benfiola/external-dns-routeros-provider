@@ -235,10 +235,7 @@ class Provider:
             # handle created targets for existing records
             for target in new_targets - old_targets:
                 with log_action("create updated", endpoint, target):
-                    record = record_map.find(endpoint, target)
-                    if not record:
-                        logger.debug(f"routeros record not found")
-                        continue
+                    record = to_routeros_record(endpoint, target)
                     await self.client.add_ip_dns_record(record)
 
     async def get_domain_filter(self) -> DomainFilter:
@@ -271,7 +268,7 @@ def to_routeros_record(endpoint: Endpoint, target: str) -> IpDnsRecord:
     kwargs: dict = dict(
         disabled=False,
         dynamic=False,
-        match_subdomain=False,
+        match_subdomain=target.startswith("*."),
         name=endpoint.dns_name,
         ttl=to_routeros_ttl(endpoint.record_ttl or 60 * 60 * 24),
     )
