@@ -368,7 +368,7 @@ class Connection:
     responses: dict[str, Response]
     # the stream (reader, writer) connected via socket to the host
     stream: Stream | None
-    # a lock that ensures that protects the critical path around socket opening/closing vs. reuse
+    # a lock that protects the critical path around socket opening/closing vs. reuse
     stream_lock: asyncio.Lock
     # the username to supply to routeros' /login api
     username: str
