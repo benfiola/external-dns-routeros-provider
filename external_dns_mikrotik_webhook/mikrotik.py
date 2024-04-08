@@ -653,10 +653,13 @@ async def read_word(reader: asyncio.StreamReader) -> str:
     # read encoded length
     # NOTE: these values are obtained from the masks in `write_word`
     try:
-        length = await asyncio.wait_for(reader.readexactly(1), timeout=1)
+        header = await asyncio.wait_for(reader.readexactly(1), timeout=1)
     except asyncio.TimeoutError:
         return ""
-    header = ord(length)
+
+    # if the byte read is a known header, use it to determine
+    # how many bytes need to be read to determine the length
+    header = ord(header)
     if header & 0xF0 == 0xF0:
         num_bytes = 4
     elif header & 0xE0 == 0xE0:
@@ -667,7 +670,14 @@ async def read_word(reader: asyncio.StreamReader) -> str:
         num_bytes = 1
     else:
         num_bytes = 0
-    length = ord(length + (await reader.readexactly(num_bytes)))
+
+    if num_bytes:
+        # read more data to obtain the length
+        data = await reader.readexactly(num_bytes)
+        length = ord(data)
+    else:
+        # the byte read is the length
+        length = header
 
     # read exactly 'length' bytes to obtain data
     data = await reader.readexactly(length)
