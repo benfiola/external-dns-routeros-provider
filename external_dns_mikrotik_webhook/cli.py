@@ -4,9 +4,9 @@ import re
 
 import click
 import uvloop
+from pykrotik import Client as MikrotikClient
 
 from external_dns_mikrotik_webhook.logs import configure_logging
-from external_dns_mikrotik_webhook.mikrotik import Client as MikrotikClient
 from external_dns_mikrotik_webhook.provider import DomainFilter, Provider
 from external_dns_mikrotik_webhook.webhook import Webhook
 

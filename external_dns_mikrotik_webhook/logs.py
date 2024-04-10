@@ -21,6 +21,13 @@ def configure_logging(log_level: int | None = None):
     logger.addHandler(handler)
     logger.setLevel(log_level)
 
+    # configure pykrotik logging
+    logger = logging.getLogger("pykrotik")
+    handler = logging.StreamHandler()
+    handler.setFormatter(default_formatter)
+    logger.addHandler(handler)
+    logger.setLevel(log_level)
+
     # configure uvicorn logging
     # NOTE: reference: uvicorn.config.LOGGING_CONFIG
     # NOTE: reference: uvicorn.logging.AccessFormatter

@@ -1,14 +1,19 @@
 [project]
 name = "external-dns-mikrotik-webhook"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
     "click",
     "fastapi",
     "pydantic",
-    "pytest",
-    "pytest-asyncio",
+    "pykrotik",
     "uvloop",
     "uvicorn"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
 ]
 
 [project.scripts]

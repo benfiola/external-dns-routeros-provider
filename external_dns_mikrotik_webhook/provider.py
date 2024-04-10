@@ -5,14 +5,8 @@ import logging
 import re
 
 import pydantic
-
-from external_dns_mikrotik_webhook.mikrotik import Client as MikrotikClient
-from external_dns_mikrotik_webhook.mikrotik import (
-    IpDnsARecord,
-    IpDnsCnameRecord,
-    IpDnsRecord,
-    IpDnsTxtRecord,
-)
+from pykrotik import Client as MikrotikClient
+from pykrotik import IpDnsARecord, IpDnsCnameRecord, IpDnsRecord, IpDnsTxtRecord
 
 logger = logging.getLogger(__name__)
 
