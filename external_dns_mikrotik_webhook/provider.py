@@ -6,7 +6,7 @@ import re
 
 import pydantic
 from pykrotik import Client as MikrotikClient
-from pykrotik import IpDnsARecord, IpDnsCnameRecord, IpDnsRecord, IpDnsTxtRecord
+from pykrotik import IpDnsRecord, IpDnsRecordType
 
 logger = logging.getLogger(__name__)
 
@@ -137,11 +137,11 @@ class RecordMap:
         Return None if record not found.
         """
         for item in self.data.get(endpoint.dns_name, []):
-            if isinstance(item, IpDnsARecord) and item.address == target:
+            if item.type == IpDnsRecordType.A and item.address == target:
                 return item
-            elif isinstance(item, IpDnsCnameRecord) and item.cname == target:
+            elif item.type == IpDnsRecordType.CNAME and item.cname == target:
                 return item
-            elif isinstance(item, IpDnsTxtRecord) and item.text == target:
+            elif item.type == IpDnsRecordType.TXT and item.text == target:
                 return item
         return None
 
@@ -268,11 +268,11 @@ def to_routeros_record(endpoint: Endpoint, target: str) -> IpDnsRecord:
     )
 
     if endpoint.record_type == RecordType.A:
-        return IpDnsARecord(address=target, **kwargs)
+        return IpDnsRecord(address=target, type=IpDnsRecordType.A, **kwargs)
     if endpoint.record_type == RecordType.CNAME:
-        return IpDnsCnameRecord(cname=target, **kwargs)
+        return IpDnsRecord(cname=target, type=IpDnsRecordType.CNAME, **kwargs)
     elif endpoint.record_type == RecordType.TXT:
-        return IpDnsTxtRecord(text=target, **kwargs)
+        return IpDnsRecord(text=target, type=IpDnsRecordType.TXT, **kwargs)
     else:
         raise NotImplementedError()
 
@@ -281,14 +281,15 @@ def to_external_dns_endpoint(record: IpDnsRecord) -> Endpoint:
     """
     Helper method to convert a routeros dns record to an external-dns endpoint.
     """
-    if isinstance(record, IpDnsARecord):
+    if record.type == IpDnsRecordType.A:
         targets = [record.address]
-    elif isinstance(record, IpDnsCnameRecord):
+    elif record.type == IpDnsRecordType.CNAME:
         targets = [record.cname]
-    elif isinstance(record, IpDnsTxtRecord):
+    elif record.type == IpDnsRecordType.TXT:
         targets = [record.text]
     else:
         raise NotImplementedError()
+    targets = list(map(str, targets))
 
     endpoint = Endpoint(
         dns_name=record.name,

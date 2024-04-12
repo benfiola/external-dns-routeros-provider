@@ -1,11 +1,11 @@
 [project]
 name = "external-dns-mikrotik-webhook"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
     "click",
     "fastapi",
     "pydantic",
-    "pykrotik",
+    "pykrotik==0.0.5",
     "uvloop",
     "uvicorn"
 ]
