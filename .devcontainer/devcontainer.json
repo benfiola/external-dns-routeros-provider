@@ -1,6 +1,6 @@
 {
   "image": "python:3.10.13",
-  "postCreateCommand": ".devcontainer/post-create.sh"
+  "postCreateCommand": ".devcontainer/post-create.sh",
   "customizations": {
     "vscode": {
       "extensions": [
