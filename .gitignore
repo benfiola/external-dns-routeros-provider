@@ -9,3 +9,5 @@
 
 # ignore IDE files
 **/.vscode
+
+*.env
