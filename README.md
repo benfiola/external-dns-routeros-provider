@@ -25,3 +25,33 @@ Configuring the webhook can be done via the environment or via CLI arguments.
 | --routeros-host          | ROUTEROS_HOST                       | Hostname/IP address of routeros host                                                   |
 | --routeros-password      | ROUTEROS_PASSWORD                   | Password of user on routeros host                                                      |
 | --routeros-username      | ROUTEROS_USERNAME                   | Username of user on routeros host                                                      |
+
+## Development
+
+I personally use [vscode](https://code.visualstudio.com/) as an IDE. For a consistent development experience, this project is also configured to utilize [devcontainers](https://containers.dev/). If you're using both - and you have the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) installed - you can follow the [introductory docs](https://code.visualstudio.com/docs/devcontainers/tutorial) to quickly get started.
+
+NOTE: Helper scripts are written under the assumption that they're being executed within a dev container.
+
+### Creating a cluster
+
+From the project root, run the following to create a development cluster to test the webhook with:
+
+```shell
+cd /workspaces/external-dns-mikrotik-webhook
+./scripts/dev.sh
+```
+
+This will:
+
+- Delete an existing dev cluster if one exists
+- Create a new dev cluster
+- Delete an existing routeros container if one exists
+- Create a new routeros container
+
+### Creating a launch script
+
+Copy the [dev.template.py](./dev.template.py) script to `dev.py`, then run it to start a sample webhook.
+
+If placed in the top-level directory, `dev.py` is gitignored and you can change this file as needed without worrying about committing it to git.
+
+Additionally, the devcontainer is configured with vscode launch configurations that point to a top-level `dev.py` file. You should be able to launch (and attach a debugger to) the webhook by launching it natively through vscode.

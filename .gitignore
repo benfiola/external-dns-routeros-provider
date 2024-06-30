@@ -5,9 +5,8 @@
 
 # ignore root-level python files except for specific exclusions
 /*.py
+!/dev.template.py
 !/setup.py
 
 # ignore IDE files
 **/.vscode
-
-*.env

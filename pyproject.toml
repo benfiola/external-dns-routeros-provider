@@ -1,6 +1,6 @@
 [project]
 name = "external-dns-mikrotik-webhook"
-version = "0.0.4"
+version = "0.0.0"
 dependencies = [
     "click",
     "fastapi",
@@ -14,7 +14,9 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-asyncio",
-    "python-dotenv
+    "python-dotenv",
+    "python-semantic-release",
+    "toml"
 ]
 
 [project.scripts]
@@ -26,6 +28,15 @@ asyncio_mode = "auto"
 testpaths = [
     "tests"
 ]
+
+[tool.semantic_release.branches.dev]
+match = "dev"
+prerelease = true
+prerelease_token = "rc"
+
+[tool.semantic_release.branches.main]
+match = "main"
+prerelease = false
 
 [tool.setuptools.packages.find]
 include = ["external_dns_mikrotik_webhook"]

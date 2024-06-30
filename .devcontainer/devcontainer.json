@@ -1,6 +1,11 @@
 {
-  "image": "python:3.10.13",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
   "postCreateCommand": ".devcontainer/post-create.sh",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -19,6 +24,22 @@
           "source.formatDocument"
         ],
         "isort.args": ["--profile", "black"],
+        "launch": {
+          "version": "0.2.0",
+          "configurations": [
+            {
+              "name": "Python: dev.py",
+              "type": "debugpy",
+              "request": "launch",
+              "program": "${workspaceFolder}/dev.py",
+              "cwd": "${workspaceFolder}",
+              "purpose": ["debug-test"],
+              "console": "integratedTerminal",
+              "justMyCode": false
+            }
+          ]
+        },
+        "python.defaultInterpreterPath": "/asdf/installs/python/3.10.12/bin/python3",
         "python.testing.pytestEnabled": true
       }
     }
