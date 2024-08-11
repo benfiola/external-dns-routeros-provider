@@ -2,28 +2,22 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
-  "postCreateCommand": ".devcontainer/post-create.sh",
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
-  },
   "customizations": {
     "vscode": {
       "extensions": [
+        "esbenp.prettier-vscode",
+        "rohit-gohri.format-code-action",
         "ms-python.black-formatter",
         "ms-python.isort",
-        "esbenp.prettier-vscode",
-        "rohit-gohri.format-code-action"
+        "ms-python.python"
       ],
       "settings": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "[python]": {
-          "editor.defaultFormatter": "ms-python.black-formatter"
-        },
         "editor.codeActionsOnSave": [
           "source.organizeImports",
           "source.formatDocument"
         ],
-        "isort.args": ["--profile", "black"],
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "isort.args": ["--profile", "black", "--pro.ject", "minio_operator_ext"],
         "launch": {
           "version": "0.2.0",
           "configurations": [
@@ -39,9 +33,18 @@
             }
           ]
         },
-        "python.defaultInterpreterPath": "/asdf/installs/python/3.10.12/bin/python3",
-        "python.testing.pytestEnabled": true
+        "python.defaultInterpreterPath": "/venv/bin/python3",
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter"
+        }
       }
     }
-  }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.10.2"
+    }
+  },
+  "postCreateCommand": ".devcontainer/post-create.sh"
 }

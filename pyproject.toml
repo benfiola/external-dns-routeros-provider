@@ -12,32 +12,11 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "packaging",
-    "pytest",
-    "pytest-asyncio",
-    "python-dotenv",
-    "python-semantic-release",
-    "toml"
+    "black"
 ]
 
 [project.scripts]
 external-dns-mikrotik-webhook = "external_dns_mikrotik_webhook.cli:main"
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-asyncio_mode = "auto"
-testpaths = [
-    "tests"
-]
-
-[tool.semantic_release.branches.dev]
-match = "dev"
-prerelease = true
-prerelease_token = "rc"
-
-[tool.semantic_release.branches.main]
-match = "main"
-prerelease = false
 
 [tool.setuptools.packages.find]
 include = ["external_dns_mikrotik_webhook"]
