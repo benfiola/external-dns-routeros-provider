@@ -1,0 +1,142 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"os"
+	"time"
+
+	"golang.org/x/sync/errgroup"
+	"k8s.io/apimachinery/pkg/labels"
+
+	"github.com/benfiola/external-dns-routeros-provider/internal/provider"
+	"sigs.k8s.io/external-dns/controller"
+	"sigs.k8s.io/external-dns/endpoint"
+	"sigs.k8s.io/external-dns/pkg/apis/externaldns"
+	"sigs.k8s.io/external-dns/plan"
+	"sigs.k8s.io/external-dns/provider/webhook"
+	"sigs.k8s.io/external-dns/registry"
+	"sigs.k8s.io/external-dns/source"
+)
+
+func runController() error {
+	ctx := context.Background()
+	cfg := externaldns.NewConfig()
+	cfg.ParseFlags([]string{}) // used to set default config values
+	cfg.Interval = time.Duration(5 * 1e9)
+	cfg.LogLevel = "debug"
+	cfg.KubeConfig = "/root/.kube/config"
+	cfg.ManagedDNSRecordTypes = []string{"A", "AAAA", "CNAME", "MX", "NS", "SRV", "TXT"}
+	cfg.Sources = []string{"crd"}
+
+	lf, _ := labels.Parse(cfg.LabelFilter)
+	scfg := source.Config{
+		APIServerURL:        cfg.APIServerURL,
+		CRDSourceAPIVersion: cfg.CRDSourceAPIVersion,
+		CRDSourceKind:       cfg.CRDSourceKind,
+		DefaultTargets:      cfg.DefaultTargets,
+		KubeConfig:          cfg.KubeConfig,
+		LabelFilter:         lf,
+	}
+	ss, err := source.ByNames(ctx, &source.SingletonClientGenerator{
+		KubeConfig: cfg.KubeConfig,
+	}, cfg.Sources, &scfg)
+	if err != nil {
+		return err
+	}
+	s := source.NewMultiSource(ss, cfg.DefaultTargets)
+
+	prov, err := webhook.NewWebhookProvider(cfg.WebhookProviderURL)
+	if err != nil {
+		return err
+	}
+	r, err := registry.NewTXTRegistry(
+		prov,
+		cfg.TXTPrefix,
+		cfg.TXTSuffix,
+		cfg.TXTOwnerID,
+		cfg.TXTCacheInterval,
+		cfg.TXTWildcardReplacement,
+		cfg.ManagedDNSRecordTypes,
+		cfg.ExcludeDNSRecordTypes,
+		cfg.TXTEncryptEnabled,
+		[]byte(cfg.TXTEncryptAESKey),
+	)
+	if err != nil {
+		return err
+	}
+
+	c := controller.Controller{
+		Source:               s,
+		Registry:             r,
+		Policy:               plan.Policies[cfg.Policy],
+		Interval:             cfg.Interval,
+		DomainFilter:         endpoint.NewDomainFilter([]string{}),
+		ManagedRecordTypes:   cfg.ManagedDNSRecordTypes,
+		ExcludeRecordTypes:   cfg.ExcludeDNSRecordTypes,
+		MinEventSyncInterval: cfg.MinEventSyncInterval,
+	}
+
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	for {
+		if c.ShouldRunOnce(time.Now()) {
+			err = c.RunOnce(ctx)
+			if err != nil {
+				slog.Error(fmt.Sprintf("controller error: %s", err.Error()))
+			}
+		}
+		select {
+		case <-ticker.C:
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
+func runWebhook() error {
+	l := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
+	c, err := provider.NewClient(provider.ClientOpts{
+		Address:  "127.0.0.1:8728",
+		Logger:   l.With("name", "client"),
+		Password: "",
+		Username: "admin",
+	})
+	if err != nil {
+		return err
+	}
+	p, err := provider.NewProvider(provider.ProviderOpts{
+		Client:       c,
+		DomainFilter: endpoint.DomainFilter{},
+		Logger:       l.With("name", "provider"),
+	})
+	if err != nil {
+		return err
+	}
+	s, err := provider.NewServer(&provider.ServerOpts{
+		Logger:   l.With("name", "server"),
+		Provider: p,
+	})
+	if err != nil {
+		return err
+	}
+	return s.Run()
+}
+
+func inner() error {
+	g, _ := errgroup.WithContext(context.Background())
+	g.Go(runController)
+	g.Go(runWebhook)
+	return g.Wait()
+}
+
+func main() {
+	err := inner()
+	if err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+}

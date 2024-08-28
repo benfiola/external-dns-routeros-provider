@@ -1,11 +1,11 @@
-FROM python:3.10.13
-
+FROM golang:1.22.5 AS builder
 WORKDIR /app
+ADD cmd cmd
+ADD internal internal
+ADD go.mod go.mod
+ADD go.sum go.sum
+RUN go build cmd/provider/provider.go
 
-ADD external_dns_mikrotik_webhook external_dns_mikrotik_webhook
-ADD pyproject.toml pyproject.toml
-ADD setup.py setup.py
-
-RUN pip install -e .
-
-ENTRYPOINT ["external-dns-mikrotik-webhook", "webhook-server"]
+FROM scratch AS final
+COPY --from=builder /app/provider /provider
+ENTRYPOINT ["/provider"]

@@ -1,11 +1,5 @@
-# ignore various build/cache related python files
-*.egg-info
-**/__pycache__
-.pytest_cache
-
-# ignore root-level python files except for specific exclusions
-/*.py
-!/setup.py
+# ignore root level go files
+/dev/dev.go
 
 # ignore IDE files
 **/.vscode
