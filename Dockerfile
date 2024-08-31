@@ -4,7 +4,7 @@ ADD cmd cmd
 ADD internal internal
 ADD go.mod go.mod
 ADD go.sum go.sum
-RUN go build cmd/provider/provider.go
+RUN CGO_ENABLED=0 go build cmd/provider/provider.go
 
 FROM scratch AS final
 COPY --from=builder /app/provider /provider
