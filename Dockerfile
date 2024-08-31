@@ -9,3 +9,4 @@ RUN CGO_ENABLED=0 go build cmd/provider/provider.go
 FROM scratch AS final
 COPY --from=builder /app/provider /provider
 ENTRYPOINT ["/provider"]
+CMD ["run"]
