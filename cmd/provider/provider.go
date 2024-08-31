@@ -103,13 +103,13 @@ func main() {
 					&cli.StringFlag{
 						Name:    "server-host",
 						Usage:   "host to bind to",
-						EnvVars: []string{"EXTERNAL_DNS_ROUTEROS_SERVER_HOST"},
+						EnvVars: []string{"EXTERNAL_DNS_ROUTEROS_PROVIDER_SERVER_HOST"},
 						Value:   "127.0.0.1",
 					},
 					&cli.UintFlag{
 						Name:    "server-port",
 						Usage:   "port to bind to",
-						EnvVars: []string{"EXTERNAL_DNS_ROUTEROS_SERVER_PORT"},
+						EnvVars: []string{"EXTERNAL_DNS_ROUTEROS_PROVIDER_SERVER_PORT"},
 						Value:   8888,
 					},
 				},
