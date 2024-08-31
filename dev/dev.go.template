@@ -99,7 +99,7 @@ func runWebhook() error {
 	l := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	}))
-	c, err := provider.NewClient(provider.ClientOpts{
+	c, err := provider.NewClient(&provider.ClientOpts{
 		Address:  "127.0.0.1:8728",
 		Logger:   l.With("name", "client"),
 		Password: "",
@@ -108,7 +108,7 @@ func runWebhook() error {
 	if err != nil {
 		return err
 	}
-	p, err := provider.NewProvider(provider.ProviderOpts{
+	p, err := provider.NewProvider(&provider.ProviderOpts{
 		Client:       c,
 		DomainFilter: endpoint.DomainFilter{},
 		Logger:       l.With("name", "provider"),

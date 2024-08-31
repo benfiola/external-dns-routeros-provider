@@ -32,12 +32,12 @@ type ProviderOpts struct {
 }
 
 // Creates a new [provider] using the provided options within [ProviderOpts]
-func NewProvider(o ProviderOpts) (provider, error) {
+func NewProvider(o *ProviderOpts) (*provider, error) {
 	l := o.Logger
 	if l == nil {
 		l = slog.New(slog.NewTextHandler(io.Discard, nil))
 	}
-	return provider{
+	return &provider{
 		client:       o.Client,
 		domainFilter: o.DomainFilter,
 		logger:       l,
@@ -46,14 +46,14 @@ func NewProvider(o ProviderOpts) (provider, error) {
 
 // According to [ednsprovider.Provider], 'canonicalizes' endpoints to be consistent with that of the provider.
 // Currently, this provider does not need to canonicalize endpoints and simply returns the given input.
-func (p provider) AdjustEndpoints(es []*endpoint.Endpoint) ([]*endpoint.Endpoint, error) {
+func (p *provider) AdjustEndpoints(es []*endpoint.Endpoint) ([]*endpoint.Endpoint, error) {
 	return es, nil
 }
 
 // Applies DNS changes to the target using this provider.
 // Returns an error if any update operation fails.
 // Attempts to apply all changes before returning an error on failure.
-func (p provider) ApplyChanges(co context.Context, ch *plan.Changes) error {
+func (p *provider) ApplyChanges(co context.Context, ch *plan.Changes) error {
 	p.logger.Info("applying changes")
 
 	errs := []error{}
@@ -85,7 +85,7 @@ func (p provider) ApplyChanges(co context.Context, ch *plan.Changes) error {
 
 // Performs a health check of provider and client
 // Returns an error if the provider/client are unhealthy
-func (p provider) Health() error {
+func (p *provider) Health() error {
 	p.logger.Info("performing health check")
 	err := p.client.Health()
 	if err != nil {
@@ -95,12 +95,12 @@ func (p provider) Health() error {
 }
 
 // Gets the domain filters configured when the provider was launched
-func (p provider) GetDomainFilter() endpoint.DomainFilter {
+func (p *provider) GetDomainFilter() endpoint.DomainFilter {
 	return p.domainFilter
 }
 
 // Gets known records attached to this provider
-func (p provider) Records(c context.Context) ([]*endpoint.Endpoint, error) {
+func (p *provider) Records(c context.Context) ([]*endpoint.Endpoint, error) {
 	p.logger.Info("fetching records")
 	return p.client.ListEndpoints()
 }

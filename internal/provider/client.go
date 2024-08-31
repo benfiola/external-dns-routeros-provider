@@ -40,20 +40,20 @@ type ClientOpts struct {
 
 // Creates a new [client] struct using the provided [ClientOpts] arguments.
 // Validates that the provided options are valid.
-func NewClient(o ClientOpts) (client, error) {
+func NewClient(o *ClientOpts) (*client, error) {
 	l := o.Logger
 	if l == nil {
 		l = slog.New(slog.NewTextHandler(io.Discard, nil))
 	}
 	cs := strings.Split(o.Address, ":")
 	if len(cs) != 2 {
-		return client{}, fmt.Errorf("address not <host>:<port> format")
+		return &client{}, fmt.Errorf("address not <host>:<port> format")
 	}
 	_, err := strconv.ParseUint(cs[1], 0, 0)
 	if err != nil {
-		return client{}, fmt.Errorf("port invalid: %w", err)
+		return &client{}, fmt.Errorf("port invalid: %w", err)
 	}
-	return client{
+	return &client{
 		address:  o.Address,
 		logger:   l,
 		password: o.Password,
@@ -89,7 +89,7 @@ func (c *client) withClient(cb withClientCallback) error {
 
 // Performs a health check of the client by querying a simple routeros api
 // If the query fails and returns an error, this indicates the client is unhealthy
-func (c client) Health() error {
+func (c *client) Health() error {
 	return c.withClient(func() error {
 		_, err := c.client.RunArgs([]string{"/system/resource/print"})
 		return err
@@ -143,7 +143,7 @@ func (e NotExternalDnsRecordError) Error() string {
 var recordMetadataPrefix = "external-dns:"
 
 // Retrieves metadata from a routeros dns record
-func (c client) getRecordMetadata(v map[string]string) (recordMetadata, error) {
+func (c *client) getRecordMetadata(v map[string]string) (recordMetadata, error) {
 	co := v["comment"]
 	rms, ok := strings.CutPrefix(co, recordMetadataPrefix)
 	if !ok {
@@ -210,12 +210,12 @@ func (c *client) listDnsRecords() ([]map[string]string, error) {
 
 // A key is used to connect [endpoint.Endpoint] and routeros ip dns records.
 // This function standardizes on this key.
-func (c client) makeKey(rt string, n string) string {
+func (c *client) makeKey(rt string, n string) string {
 	return fmt.Sprintf("%s::%s", rt, n)
 }
 
 // Creates a new endpoint
-func (c client) CreateEndpoint(e *endpoint.Endpoint) error {
+func (c *client) CreateEndpoint(e *endpoint.Endpoint) error {
 	rm := recordMetadata{}
 	rmb, err := json.Marshal(rm)
 	if err != nil {
@@ -267,7 +267,7 @@ func (c client) CreateEndpoint(e *endpoint.Endpoint) error {
 }
 
 // Deletes an endpoint
-func (c client) DeleteEndpoint(e *endpoint.Endpoint) error {
+func (c *client) DeleteEndpoint(e *endpoint.Endpoint) error {
 	rs, err := c.listDnsRecords()
 	if err != nil {
 		return err
@@ -293,7 +293,7 @@ func (c client) DeleteEndpoint(e *endpoint.Endpoint) error {
 }
 
 // Lists all endpoints
-func (c client) ListEndpoints() ([]*endpoint.Endpoint, error) {
+func (c *client) ListEndpoints() ([]*endpoint.Endpoint, error) {
 	rs, err := c.listDnsRecords()
 	if err != nil {
 		return []*endpoint.Endpoint{}, err

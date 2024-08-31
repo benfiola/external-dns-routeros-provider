@@ -122,7 +122,7 @@ func main() {
 					ra := c.String("routeros-address")
 					rp := c.String("routeros-password")
 					ru := c.String("routeros-username")
-					pc, err := provider.NewClient(provider.ClientOpts{
+					pc, err := provider.NewClient(&provider.ClientOpts{
 						Address:  ra,
 						Logger:   l.With("name", "client"),
 						Password: rp,
@@ -154,7 +154,7 @@ func main() {
 					} else if fre != nil || fri != nil {
 						df = endpoint.NewRegexDomainFilter(fri, fre)
 					}
-					p, err := provider.NewProvider(provider.ProviderOpts{
+					p, err := provider.NewProvider(&provider.ProviderOpts{
 						Client:       pc,
 						DomainFilter: df,
 						Logger:       l.With("name", "provider"),
