@@ -150,23 +150,28 @@ type ServerOpts struct {
 	Provider Provider
 }
 
-// Constructs an [server] using the provided options within [ServerOpts]
+// Constructs a [server] using the provided options within [ServerOpts]
 func NewServer(o *ServerOpts) (*server, error) {
 	l := o.Logger
 	if l == nil {
 		l = slog.New(slog.NewTextHandler(io.Discard, nil))
 	}
-	if o.Provider == nil {
-		return nil, fmt.Errorf("")
+	h := o.Host
+	if h == "" {
+		h = "127.0.0.1"
+	}
+	p := o.Port
+	if p == 0 {
+		p = 8888
 	}
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
 	s := server{
 		echo:     e,
-		host:     o.Host,
+		host:     h,
 		logger:   l,
-		port:     o.Port,
+		port:     p,
 		provider: o.Provider,
 	}
 	e.Use(slogecho.New(l))
@@ -180,15 +185,7 @@ func NewServer(o *ServerOpts) (*server, error) {
 
 // Runs the [server] using its internal configuration
 func (s *server) Run() error {
-	h := s.host
-	if h == "" {
-		h = "127.0.0.1"
-	}
-	p := s.port
-	if p == 0 {
-		p = 8888
-	}
-	a := fmt.Sprintf("%s:%d", h, p)
+	a := fmt.Sprintf("%s:%d", s.host, s.port)
 	s.logger.Info(fmt.Sprintf("starting server: %s", a))
 	return s.echo.Start(a)
 }

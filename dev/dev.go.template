@@ -99,26 +99,10 @@ func runWebhook() error {
 	l := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	}))
-	c, err := provider.NewClient(&provider.ClientOpts{
-		Address:  "127.0.0.1:8728",
-		Logger:   l.With("name", "client"),
-		Password: "",
-		Username: "admin",
-	})
-	if err != nil {
-		return err
-	}
-	p, err := provider.NewProvider(&provider.ProviderOpts{
-		Client:       c,
-		DomainFilter: endpoint.DomainFilter{},
-		Logger:       l.With("name", "provider"),
-	})
-	if err != nil {
-		return err
-	}
-	s, err := provider.NewServer(&provider.ServerOpts{
-		Logger:   l.With("name", "server"),
-		Provider: p,
+	s, err := provider.New(&provider.Opts{
+		Logger:           l,
+		RouterOSAddress:  "127.0.0.1:8728",
+		RouterOSUsername: "admin",
 	})
 	if err != nil {
 		return err

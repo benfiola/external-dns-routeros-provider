@@ -10,7 +10,6 @@ import (
 
 	"github.com/benfiola/external-dns-routeros-provider/internal/provider"
 	"github.com/urfave/cli/v2"
-	"sigs.k8s.io/external-dns/endpoint"
 )
 
 // Configures logging for the application.
@@ -42,7 +41,7 @@ func configureLogging(ls string) (*slog.Logger, error) {
 }
 
 // Used as a key to the urfave/cli context to store the application-level logger.
-type Logger struct{}
+type ContextLogger struct{}
 
 func main() {
 	err := (&cli.App{
@@ -51,7 +50,7 @@ func main() {
 			if err != nil {
 				return err
 			}
-			c.Context = context.WithValue(c.Context, Logger{}, logger)
+			c.Context = context.WithValue(c.Context, ContextLogger{}, logger)
 			return nil
 		},
 		Flags: []cli.Flag{
@@ -114,26 +113,12 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					l, ok := c.Context.Value(Logger{}).(*slog.Logger)
+					var err error
+					l, ok := c.Context.Value(ContextLogger{}).(*slog.Logger)
 					if !ok {
 						return fmt.Errorf("logger not attached to context")
 					}
 
-					ra := c.String("routeros-address")
-					rp := c.String("routeros-password")
-					ru := c.String("routeros-username")
-					pc, err := provider.NewClient(&provider.ClientOpts{
-						Address:  ra,
-						Logger:   l.With("name", "client"),
-						Password: rp,
-						Username: ru,
-					})
-					if err != nil {
-						return err
-					}
-
-					fe := c.StringSlice("filter-exclude")
-					fi := c.StringSlice("filter-include")
 					var fre *regexp.Regexp
 					if fres := c.String("filter-regex-exclude"); fres != "" {
 						fre, err = regexp.Compile(fres)
@@ -148,32 +133,20 @@ func main() {
 							return err
 						}
 					}
-					df := endpoint.DomainFilter{}
-					if fe != nil || fi != nil {
-						df = endpoint.NewDomainFilterWithExclusions(fi, fe)
-					} else if fre != nil || fri != nil {
-						df = endpoint.NewRegexDomainFilter(fri, fre)
-					}
-					p, err := provider.NewProvider(&provider.ProviderOpts{
-						Client:       pc,
-						DomainFilter: df,
-						Logger:       l.With("name", "provider"),
-					})
-					if err != nil {
-						return err
-					}
 
-					sh := c.String("server-host")
-					sp := c.Uint("server-port")
-					s, err := provider.NewServer(&provider.ServerOpts{
-						Host:     sh,
-						Logger:   l.With("name", "server"),
-						Port:     sp,
-						Provider: p,
+					s, err := provider.New(&provider.Opts{
+						FilterExclude:      c.StringSlice("filter-exclude"),
+						FilterInclude:      c.StringSlice("filter-include"),
+						FilterRegexExclude: fre,
+						FilterRegexInclude: fri,
+						Logger:             l,
+						RouterOSAddress:    c.String("routeros-address"),
+						RouterOSPassword:   c.String("routeros-password"),
+						RouterOSUsername:   c.String("routeros-username"),
+						ServerHost:         c.String("server-host"),
+						ServerPort:         c.Uint("server-port"),
 					})
-					if err != nil {
-						return err
-					}
+
 					return s.Run()
 				},
 			},
