@@ -223,12 +223,17 @@ func (c *client) CreateEndpoint(e *endpoint.Endpoint) error {
 		return err
 	}
 	com := fmt.Sprintf("%s%s", recordMetadataPrefix, string(rmb))
+	ttl := e.RecordTTL
+	if ttl == 0 {
+		ttl = endpoint.TTL(86400)
+	}
+	ttl = endpoint.TTL(ttl)
 	for _, t := range e.Targets {
 		r := map[string]string{
 			"comment": com,
 			"name":    e.DNSName,
 			"type":    e.RecordType,
-			"ttl":     time.Duration(e.RecordTTL * 1e9).String(),
+			"ttl":     time.Duration(ttl).String(),
 		}
 		switch e.RecordType {
 		case "A":
