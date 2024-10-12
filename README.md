@@ -37,28 +37,45 @@ I personally use [vscode](https://code.visualstudio.com/) as an IDE. For a consi
 
 NOTE: Helper scripts are written under the assumption that they're being executed within a dev container.
 
-### Creating a dev environment
+### Installing tools
 
-From the project root, run the following to create a development cluster to test the webhook with:
+From the project root, run the following to install useful tools. Currently, this includes:
+
+- kubectl
+- minikube
 
 ```shell
 cd /workspaces/external-dns-routeros-provider
-./dev/create.sh
+make install-tools
+```
+
+### Creating a development environment
+
+From the project root, run the following to create a development environment to test the provider with:
+
+```shell
+cd /workspaces/external-dns-routeros-provider
+make dev-env
 ```
 
 This will:
 
-- Delete an existing dev cluster if one exists
-- Create a new dev cluster
-- Delete an existing routeros container if one exists
-- Create a new routeros container
-- Deploys external-dns CRDs
-- Deploys a set of test DNS records
+- Create a new minikube cluster
+- Apply external-dns CRDs
+- Start a local routeros container
+- Wait for routeros to be accessible
 
-Re-running this script will re-create all of the above.
+### Run end-to-end tests
 
-### Creating a launch script
+With a development environment deployed, you can run end-to-end tests to confirm the provider functions as expected:
 
-Copy the [./dev/dev.go.template](./dev/dev.go.template) script to `./dev/dev.go`, then run it to start both the external-dns controller and this provider. `./dev/dev.go` is ignored by git and can be modified as needed to help facilitate local development.
+```shell
+cd /workspaces/external-dns-routeros-provider
+make e2e-test
+```
+
+### Creating a debug script
+
+Copy the [./dev/dev.go.template](./dev/dev.go.template) script to `./dev/dev.go`, then run it to start the provider. `./dev/dev.go` is ignored by git and can be modified as needed to help facilitate local development.
 
 Additionally, the devcontainer is configured with a vscode launch configuration that points to `./dev/dev.go`. You should be able to launch (and attach a debugger to) the webhook via this vscode launch configuration.

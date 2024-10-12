@@ -27,7 +27,7 @@ func runController() error {
 	cfg.Interval = time.Duration(5 * 1e9)
 	cfg.LogLevel = "debug"
 	cfg.KubeConfig = "/root/.kube/config"
-	cfg.ManagedDNSRecordTypes = []string{"A", "AAAA", "CNAME", "MX", "NS", "SRV", "TXT"}
+	cfg.ManagedDNSRecordTypes = []string{"A", "CNAME", "MX", "NS", "SRV", "TXT"}
 	cfg.Sources = []string{"crd"}
 
 	lf, _ := labels.Parse(cfg.LabelFilter)
@@ -107,7 +107,7 @@ func runWebhook() error {
 	if err != nil {
 		return err
 	}
-	return s.Run()
+	return s.Run(context.Background())
 }
 
 func inner() error {

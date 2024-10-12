@@ -1,12 +1,20 @@
 package provider
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"regexp"
 
+	"golang.org/x/sync/errgroup"
 	"sigs.k8s.io/external-dns/endpoint"
 )
+
+// Main holds all the components of the application
+type Main struct {
+	provider Provider
+	server   Server
+}
 
 // Options to provide to the main entry point [New]
 type Opts struct {
@@ -22,8 +30,8 @@ type Opts struct {
 	ServerPort         uint
 }
 
-// Initializes the application and returns the configured [server] exposing the provider webhook.
-func New(o *Opts) (*server, error) {
+// Initializes the application and returns it.
+func New(o *Opts) (*Main, error) {
 	l := o.Logger
 	if l == nil {
 		l = slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -66,5 +74,16 @@ func New(o *Opts) (*server, error) {
 		return nil, err
 	}
 
-	return s, nil
+	return &Main{
+		provider: p,
+		server:   s,
+	}, nil
+}
+
+// Runs all components of the application.
+// Blocks until one of the components returns with an error.
+func (m *Main) Run(ctx context.Context) error {
+	var eg errgroup.Group
+	eg.Go(func() error { return m.server.Run(ctx) })
+	return eg.Wait()
 }

@@ -12,6 +12,8 @@
           "source.formatDocument"
         ],
         "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "go.testFlags": ["-v", "-count=1"],
+        "go.testTimeout": "300s",
         "launch": {
           "version": "0.2.0",
           "configurations": [
@@ -33,12 +35,16 @@
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/go": {
-      "version": "1.22.5"
+      "version": "1.23.2"
     },
     "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
-      "packages": ["curl", "git"]
+      "packages": ["curl", "git", "iproute2", "sudo", "vim"]
     }
   },
   "image": "ubuntu:latest",
-  "postCreateCommand": ".devcontainer/post-create.sh"
+  "postCreateCommand": ".devcontainer/post-create.sh",
+  "remoteEnv": {
+    "KUBECONFIG": "/workspaces/external-dns-routeros-provider/.dev/kube-config.yaml",
+    "PATH": "/workspaces/external-dns-routeros-provider/.dev:${containerEnv:PATH}"
+  }
 }

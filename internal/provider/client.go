@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -124,7 +125,9 @@ func (c *client) deleteDnsRecord(v map[string]string) error {
 }
 
 // Metadata stored as a comment within a routeros dns record
-type recordMetadata struct{}
+type recordMetadata struct {
+	Id string `json:"id"`
+}
 
 // When a routeros dns record is missing metadata via structured data stored in its comment,
 // it's because either a) the record is not managed by external-dns or b) the record is invalid.
@@ -210,29 +213,26 @@ func (c *client) listDnsRecords() ([]map[string]string, error) {
 
 // A key is used to connect [endpoint.Endpoint] and routeros ip dns records.
 // This function standardizes on this key.
-func (c *client) makeKey(rt string, n string) string {
-	return fmt.Sprintf("%s::%s", rt, n)
+// NOTE: id is added via [provider.AdjustEndpoints] - an empty id indicates a TXT registry record
+func (c *client) makeKey(rt string, n string, id string) string {
+	return fmt.Sprintf("%s::%s::%s", rt, n, id)
 }
 
 // Creates a new endpoint
 func (c *client) CreateEndpoint(e *endpoint.Endpoint) error {
-	rm := recordMetadata{}
+	rm := recordMetadata{Id: e.Labels[LabelID]}
 	rmb, err := json.Marshal(rm)
 	if err != nil {
 		// external-dns managed record is invalid - unexpected, should be caught by [listDnsRecords]
 		return err
 	}
 	com := fmt.Sprintf("%s%s", recordMetadataPrefix, string(rmb))
-	ttl := time.Duration(e.RecordTTL) * time.Second
-	if ttl == 0 {
-		ttl = 24 * time.Hour
-	}
 	for _, t := range e.Targets {
 		r := map[string]string{
 			"comment": com,
 			"name":    e.DNSName,
 			"type":    e.RecordType,
-			"ttl":     time.Duration(ttl).String(),
+			"ttl":     (time.Duration(e.RecordTTL) * time.Second).String(),
 		}
 		switch e.RecordType {
 		case "A":
@@ -276,14 +276,14 @@ func (c *client) DeleteEndpoint(e *endpoint.Endpoint) error {
 	if err != nil {
 		return err
 	}
-	k := c.makeKey(e.RecordType, e.DNSName)
+	k := c.makeKey(e.RecordType, e.DNSName, e.Labels[LabelID])
 	for _, r := range rs {
-		_, err := c.getRecordMetadata(r)
+		rm, err := c.getRecordMetadata(r)
 		if err != nil {
 			// external-dns managed record is invalid - unexpected, should be caught by [listDnsRecords]
 			return err
 		}
-		rk := c.makeKey(r["type"], r["name"])
+		rk := c.makeKey(r["type"], r["name"], rm.Id)
 		if rk != k {
 			// record is not mapped to endpoint - ignore
 			continue
@@ -296,6 +296,62 @@ func (c *client) DeleteEndpoint(e *endpoint.Endpoint) error {
 	return nil
 }
 
+// Parses duration strings from routeros
+// These duration strings contain additional time specifiers unsupported by [time.ParseDuration] - thus requiring additional processing.
+func ParseRouterOSDuration(d string) (endpoint.TTL, error) {
+	// find unsupported time fields
+	r, err := regexp.Compile("(?:(?P<weeks>[0-9]+)w)?(?:(?P<days>[0-9])+d)?")
+	if err != nil {
+		return 0, err
+	}
+	sm := r.FindStringSubmatch(d)
+
+	// clear unsupported time fields
+	d = r.ReplaceAllLiteralString(d, "")
+
+	// use [time.ParseDuration] to parse remaining time fields
+	v := time.Duration(0)
+	if d != "" {
+		v, err = time.ParseDuration(d)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	// helper method to get a time field from the original string
+	getTimeField := func(f string) (int, error) {
+		i := r.SubexpIndex(f)
+		if i == -1 {
+			return 0, fmt.Errorf("regexp field %s not found", f)
+		}
+		vs := sm[i]
+		if vs == "" {
+			vs = "0"
+		}
+		v, err := strconv.Atoi(vs)
+		if err != nil {
+			return 0, fmt.Errorf("regexp field %s not an int", f)
+		}
+		return v, nil
+	}
+
+	// add weeks
+	wks, err := getTimeField("weeks")
+	if err != nil {
+		return 0, err
+	}
+	v += time.Duration(wks*24*7) * time.Hour
+
+	// add days
+	dys, err := getTimeField("days")
+	if err != nil {
+		return 0, err
+	}
+	v += time.Duration(dys*24) * time.Hour
+
+	return endpoint.TTL(v.Seconds()), nil
+}
+
 // Lists all endpoints
 func (c *client) ListEndpoints() ([]*endpoint.Endpoint, error) {
 	rs, err := c.listDnsRecords()
@@ -304,21 +360,21 @@ func (c *client) ListEndpoints() ([]*endpoint.Endpoint, error) {
 	}
 	mes := map[string]*endpoint.Endpoint{}
 	for _, r := range rs {
-		_, err := c.getRecordMetadata(r)
+		rm, err := c.getRecordMetadata(r)
 		if err != nil {
 			// external-dns managed record is invalid - unexpected, should be caught by [listDnsRecords]
 			return []*endpoint.Endpoint{}, err
 		}
-		k := c.makeKey(r["type"], r["name"])
+		k := c.makeKey(r["type"], r["name"], rm.Id)
 		_, ex := mes[k]
 		if !ex {
-			ttl, err := time.ParseDuration(r["ttl"])
+			ttl, err := ParseRouterOSDuration(r["ttl"])
 			if err != nil {
 				return []*endpoint.Endpoint{}, err
 			}
 			mes[k] = &endpoint.Endpoint{
 				DNSName:    r["name"],
-				RecordTTL:  endpoint.TTL(ttl),
+				RecordTTL:  ttl,
 				RecordType: r["type"],
 				Targets:    []string{},
 			}

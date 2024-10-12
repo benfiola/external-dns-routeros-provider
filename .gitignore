@@ -1,4 +1,5 @@
-# ignore root level go files
+# ignore local dev files
+/.dev
 /dev/dev.go
 
 # ignore IDE files

@@ -7,12 +7,19 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	slogecho "github.com/samber/slog-echo"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
 )
+
+type Server interface {
+	Run(ctx context.Context) error
+}
 
 // Internal server data struct that binds a [Provider] to endpoint functions
 type server struct {
@@ -184,8 +191,42 @@ func NewServer(o *ServerOpts) (*server, error) {
 }
 
 // Runs the [server] using its internal configuration
-func (s *server) Run() error {
-	a := fmt.Sprintf("%s:%d", s.host, s.port)
-	s.logger.Info(fmt.Sprintf("starting server: %s", a))
-	return s.echo.Start(a)
+func (s *server) Run(ctx context.Context) error {
+	var err error
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		a := fmt.Sprintf("%s:%d", s.host, s.port)
+		s.logger.Info(fmt.Sprintf("starting server: %s", a))
+		err = s.echo.Start(a)
+	}()
+
+	cancelled := false
+	for {
+		time.Sleep(100 * time.Millisecond)
+		select {
+		case <-ctx.Done():
+			cancelled = true
+		default:
+		}
+		if cancelled {
+			s.logger.Info("stopping server")
+			s.echo.Shutdown(context.Background())
+			break
+		}
+		if err != nil {
+			break
+		}
+	}
+
+	wg.Wait()
+	if err != nil && cancelled {
+		if strings.Contains(err.Error(), "http: Server closed") {
+			err = nil
+		}
+	}
+
+	return err
 }

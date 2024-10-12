@@ -5,10 +5,16 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"time"
 
+	"github.com/google/uuid"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
 	ednsprovider "sigs.k8s.io/external-dns/provider"
+)
+
+var (
+	LabelID = "bfiola.dev/external-dns-routeros-provider.id"
 )
 
 // Defines a provider interface - extending that defined by [ednsprovider.Provider]
@@ -45,8 +51,19 @@ func NewProvider(o *ProviderOpts) (*provider, error) {
 }
 
 // According to [ednsprovider.Provider], 'canonicalizes' endpoints to be consistent with that of the provider.
-// Currently, this provider does not need to canonicalize endpoints and simply returns the given input.
+// Attaches a uuid to each endpoint - helping correlate routeros records with endpoint resources.
+// Ensures a TTL is set - RouterOS appears to disable records with a TTL of 0.
+// TXT registry records *do not* use this method
 func (p *provider) AdjustEndpoints(es []*endpoint.Endpoint) ([]*endpoint.Endpoint, error) {
+	for _, e := range es {
+		if e.RecordTTL == 0 {
+			e.RecordTTL = endpoint.TTL((24 * time.Hour).Seconds())
+		}
+		_, ok := e.Labels[LabelID]
+		if !ok {
+			e.Labels[LabelID] = uuid.NewString()
+		}
+	}
 	return es, nil
 }
 

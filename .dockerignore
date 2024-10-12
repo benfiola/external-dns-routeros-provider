@@ -1,5 +1,0 @@
-# ignore root level go files
-/dev/dev.go
-
-# ignore IDE files
-**/.vscode
