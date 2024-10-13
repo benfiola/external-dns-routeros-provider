@@ -41,6 +41,7 @@ jobs:
           fi
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          echo "image_tag=${image_tag}" >> "${GITHUB_OUTPUT}"
           echo "image=${image}" >> "${GITHUB_OUTPUT}"
           echo "latest_image=${latest_image}" >> "${GITHUB_OUTPUT}"
           echo "publish_latest=${publish_latest}" >> "${GITHUB_OUTPUT}"
@@ -71,3 +72,12 @@ jobs:
               ref: 'refs/tags/${{steps.facts.outputs.tag}}',
               sha: context.sha
             })
+      - name: release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: |
+            Published docker image [${{steps.facts.outputs.image}}](https://hub.docker.com/layers/benfiola/external-dns-routeros-provider/${{steps.facts.outputs.image_tag}})
+          make_latest: ${{github.ref == 'refs/heads/main'}}
+          prerelease: ${{github.ref != 'refs/heads/main'}}
+          tag_name: ${{steps.facts.outputs.tag}}
+          target_commitish: ${{github.sha}}

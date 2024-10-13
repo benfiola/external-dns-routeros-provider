@@ -147,7 +147,7 @@ func main() {
 						ServerPort:         c.Uint("server-port"),
 					})
 
-					return s.Run()
+					return s.Run(context.Background())
 				},
 			},
 			{
