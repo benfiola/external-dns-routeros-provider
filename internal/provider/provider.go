@@ -53,7 +53,7 @@ func NewProvider(o *ProviderOpts) (*provider, error) {
 // According to [ednsprovider.Provider], 'canonicalizes' endpoints to be consistent with that of the provider.
 // Attaches a uuid to each endpoint - helping correlate routeros records with endpoint resources.
 // Ensures a TTL is set - RouterOS appears to disable records with a TTL of 0.
-// TXT registry records *do not* use this method
+// TXT registry records *do not* use this method and will get a TTL of 0 and an empty id.
 func (p *provider) AdjustEndpoints(es []*endpoint.Endpoint) ([]*endpoint.Endpoint, error) {
 	for _, e := range es {
 		if e.RecordTTL == 0 {

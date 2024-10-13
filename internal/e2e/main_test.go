@@ -126,14 +126,17 @@ func Setup(t testing.TB) TestData {
 		require.NoError(err, "clean up resource")
 	}
 
+	// create routeros client
 	ros, err := routeros.Dial("127.0.0.1:8728", "admin", "")
 	require.NoError(err, "create routeros client")
 
+	// ensure routeros client gets closed when test finishes
 	t.Cleanup(func() {
 		err := ros.Close()
 		require.NoError(err, "close routeros client")
 	})
 
+	// delete all routeros dns records
 	rs, err := ros.RunArgs([]string{"/ip/dns/static/print", "=detail"})
 	require.NoError(err, "list routeros dns records")
 	for _, re := range rs.Re {
@@ -151,8 +154,7 @@ func Setup(t testing.TB) TestData {
 	}
 }
 
-// LogrusHook is a hook that holds a reference to a [slog.Logger].
-// During testing, logrus is configured to write to [io.Discard] and log messages sent to logrus are instead routed through the attached [slog.Logger]
+// LogrusHook is a hook that routes logrus logging behavior to a [slog.Logger] instead.
 // See: [CreateController]
 // See: [logrusHook]
 type LogrusHook struct {
@@ -184,6 +186,9 @@ func (lh *LogrusHook) Fire(e *logrus.Entry) error {
 func CreateController(td TestData) *controller.Controller {
 	td.T.Helper()
 
+	// the provider uses a global logrus logger
+	// configure the global logrus logger to log to [io.Discard]
+	// install a hook that routes logs to the current test's logger.
 	l := slogt.New(td.T).With("name", "controller")
 	if logrusHook == nil {
 		logrusHook = &LogrusHook{Logger: l}

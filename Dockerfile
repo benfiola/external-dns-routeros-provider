@@ -1,4 +1,4 @@
-FROM golang:1.22.5 AS builder
+FROM golang:1.23.2 AS builder
 WORKDIR /app
 ADD cmd cmd
 ADD internal internal

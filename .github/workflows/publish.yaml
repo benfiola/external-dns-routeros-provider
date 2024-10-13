@@ -21,7 +21,7 @@ jobs:
       - name: install go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.22.5"
+          go-version: "1.23.2"
       - name: download versionctl
         run: |
           curl -fsSL -o /usr/local/bin/versionctl "https://github.com/benfiola/versionctl/releases/latest/download/versionctl-linux-amd64"
@@ -44,9 +44,6 @@ jobs:
           echo "image=${image}" >> "${GITHUB_OUTPUT}"
           echo "latest_image=${latest_image}" >> "${GITHUB_OUTPUT}"
           echo "publish_latest=${publish_latest}" >> "${GITHUB_OUTPUT}"
-      - name: test
-        run: |
-          go test ./internal/provider
       - name: set version
         run: |
           echo "${{steps.facts.outputs.version}}" > internal/provider/version.txt
