@@ -10,6 +10,8 @@ jobs:
     permissions:
       id-token: write
       contents: write
+    env:
+      image_base: benfiola/external-dns-routeros-provider
     environment:
       name: docker
       url: https://hub.docker.com/r/benfiola/external-dns-routeros-provider
@@ -31,17 +33,18 @@ jobs:
         run: |
           version="$(versionctl next)"
           tag="$(versionctl convert "${version}" git)"
-          image_base="docker.io/benfiola/external-dns-routeros-provider"
           image_tag="$(versionctl convert "${version}" docker)"
-          image="${image_base}:${image_tag}"
-          latest_image="${image_base}:latest"
+
+          image="docker.io/${{env.image_base}}:${image_tag}"
+          latest_image="docker.io/${{env.image_base}}:latest"
+
           publish_latest="0"
           if [ "${{github.ref}}" = "refs/heads/main" ]; then
             publish_latest="1"
           fi
+
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
-          echo "image_tag=${image_tag}" >> "${GITHUB_OUTPUT}"
           echo "image=${image}" >> "${GITHUB_OUTPUT}"
           echo "latest_image=${latest_image}" >> "${GITHUB_OUTPUT}"
           echo "publish_latest=${publish_latest}" >> "${GITHUB_OUTPUT}"
@@ -76,7 +79,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           body: |
-            Published docker image [${{steps.facts.outputs.image}}](https://hub.docker.com/layers/benfiola/external-dns-routeros-provider/${{steps.facts.outputs.image_tag}})
+            Published docker image: `${{steps.facts.outputs.image}}`.
           make_latest: ${{github.ref == 'refs/heads/main'}}
           prerelease: ${{github.ref != 'refs/heads/main'}}
           tag_name: ${{steps.facts.outputs.tag}}
