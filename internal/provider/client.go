@@ -126,7 +126,7 @@ func (c *client) deleteDnsRecord(v map[string]string) error {
 
 // Metadata stored as a comment within a routeros dns record
 type recordMetadata struct {
-	Id string `json:"id"`
+	Id string `json:"id,omitempty"`
 }
 
 // When a routeros dns record is missing metadata via structured data stored in its comment,
