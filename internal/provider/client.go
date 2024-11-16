@@ -25,7 +25,6 @@ type Client interface {
 // The internal struct for a routeros client holding state and configuration.
 type client struct {
 	address  string
-	client   *routeros.Client
 	logger   *slog.Logger
 	password string
 	username string
@@ -63,36 +62,24 @@ func NewClient(o *ClientOpts) (*client, error) {
 }
 
 // Callback used as part of the [withClient] implementation
-type withClientCallback func() error
+type withClientCallback func(client *routeros.Client) error
 
 // Function that handles opening and closing a connection to routeros.
 // Attaches the connected client to the parent [client] object.
 func (c *client) withClient(cb withClientCallback) error {
-	cc := c.client == nil
-	if cc {
-		rc, err := routeros.Dial(c.address, c.username, c.password)
-		if err != nil {
-			return err
-		}
-		c.client = rc
+	rc, err := routeros.Dial(c.address, c.username, c.password)
+	if err != nil {
+		return err
 	}
-
-	defer func() {
-		if cc {
-			cl := c.client
-			c.client = nil
-			cl.Close()
-		}
-	}()
-
-	return cb()
+	defer rc.Close()
+	return cb(rc)
 }
 
 // Performs a health check of the client by querying a simple routeros api
 // If the query fails and returns an error, this indicates the client is unhealthy
 func (c *client) Health() error {
-	return c.withClient(func() error {
-		_, err := c.client.RunArgs([]string{"/system/resource/print"})
+	return c.withClient(func(client *routeros.Client) error {
+		_, err := client.RunArgs([]string{"/system/resource/print"})
 		return err
 	})
 }
@@ -100,14 +87,14 @@ func (c *client) Health() error {
 // Internal method that calls routeros '/ip/dns/static/add' with a [map[string]string] that should have the same shape as a routeros ip dns record.
 // Returns an error if the api call fails
 func (c *client) createDnsRecord(v map[string]string) error {
-	return c.withClient(func() error {
+	return c.withClient(func(client *routeros.Client) error {
 		c.logger.Debug(fmt.Sprintf("create routeros dns record %s %s", v["type"], v["name"]))
 		cmd := []string{"/ip/dns/static/add"}
 		for k, v := range v {
 			attr := fmt.Sprintf("=%s=%s", k, v)
 			cmd = append(cmd, attr)
 		}
-		_, err := c.client.RunArgs(cmd)
+		_, err := client.RunArgs(cmd)
 		return err
 	})
 }
@@ -115,11 +102,11 @@ func (c *client) createDnsRecord(v map[string]string) error {
 // Internal method that calls routeros '/ip/dns/static/remove' with a [map[string]string] that should have the same shape as a routeros ip dns record.
 // Returns an error if the api call fails
 func (c *client) deleteDnsRecord(v map[string]string) error {
-	return c.withClient(func() error {
+	return c.withClient(func(client *routeros.Client) error {
 		c.logger.Debug(fmt.Sprintf("delete routeros dns record %s", v[".id"]))
 		cmd := []string{"/ip/dns/static/remove"}
 		cmd = append(cmd, fmt.Sprintf("=.id=%s", v[".id"]))
-		_, err := c.client.RunArgs(cmd)
+		_, err := client.RunArgs(cmd)
 		return err
 	})
 }
@@ -171,8 +158,8 @@ func (c *client) listDnsRecords() ([]map[string]string, error) {
 	c.logger.Debug("list routeros dns records")
 	rs := []map[string]string{}
 	irs := []map[string]string{}
-	err := c.withClient(func() error {
-		rep, err := c.client.RunArgs([]string{"/ip/dns/static/print", "=detail"})
+	err := c.withClient(func(client *routeros.Client) error {
+		rep, err := client.RunArgs([]string{"/ip/dns/static/print", "=detail"})
 		if err != nil {
 			return err
 		}
