@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-routeros/routeros/v3"
@@ -24,10 +25,13 @@ type Client interface {
 
 // The internal struct for a routeros client holding state and configuration.
 type client struct {
-	address  string
-	logger   *slog.Logger
-	password string
-	username string
+	address     string
+	client      *routeros.Client
+	connections int
+	logger      *slog.Logger
+	mutex       sync.Mutex
+	password    string
+	username    string
 }
 
 // Options passed to [NewClient] when creating a new [client].
@@ -56,6 +60,7 @@ func NewClient(o *ClientOpts) (*client, error) {
 	return &client{
 		address:  o.Address,
 		logger:   l,
+		mutex:    sync.Mutex{},
 		password: o.Password,
 		username: o.Username,
 	}, nil
@@ -64,15 +69,45 @@ func NewClient(o *ClientOpts) (*client, error) {
 // Callback used as part of the [withClient] implementation
 type withClientCallback func(client *routeros.Client) error
 
+// Creates a [routeros.Client] if one does not exist.
+func (c *client) maybeCreateClient() error {
+	defer c.mutex.Unlock()
+	c.mutex.Lock()
+	if c.client == nil {
+		var err error
+		c.client, err = routeros.Dial(c.address, c.username, c.password)
+		if err != nil {
+			return err
+		}
+	}
+	c.connections += 1
+	return nil
+}
+
+// If no other callers are currently using it, closes the [routeros.Client].
+func (c *client) maybeCloseClient() error {
+	defer c.mutex.Unlock()
+	c.mutex.Lock()
+	c.connections -= 1
+	if c.connections == 0 && c.client == nil {
+		err := c.client.Close()
+		c.client = nil
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Function that handles opening and closing a connection to routeros.
 // Attaches the connected client to the parent [client] object.
 func (c *client) withClient(cb withClientCallback) error {
-	rc, err := routeros.Dial(c.address, c.username, c.password)
+	defer c.maybeCloseClient()
+	err := c.maybeCreateClient()
 	if err != nil {
 		return err
 	}
-	defer rc.Close()
-	return cb(rc)
+	return cb(c.client)
 }
 
 // Performs a health check of the client by querying a simple routeros api
