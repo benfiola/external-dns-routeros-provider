@@ -89,7 +89,7 @@ func (c *client) maybeCloseClient() error {
 	defer c.mutex.Unlock()
 	c.mutex.Lock()
 	c.connections -= 1
-	if c.connections == 0 && c.client == nil {
+	if c.connections == 0 && c.client != nil {
 		err := c.client.Close()
 		c.client = nil
 		if err != nil {
