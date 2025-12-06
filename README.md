@@ -1,3 +1,8 @@
+> [!NOTE]
+> After doing a quick search, it appears that there are similar projects out there that aim to accomplish the same goals as this project - and I'd rather consolidate effort and energy towards having a single, good solution to this problem - than several fragmented, competing solutions.
+>
+> As a result, I've decided to archive this project in favor of the [external-dns-provider-mikrotik](https://github.com/mirceanton/external-dns-provider-mikrotik) project.
+
 # external-dns-routeros-provider
 
 <p align="center">
