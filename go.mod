@@ -3,7 +3,7 @@ module github.com/benfiola/external-dns-routeros-provider
 go 1.23.2
 
 require (
-	github.com/go-routeros/routeros/v3 v3.0.0-20240609232946-756263b69a4b
+	github.com/go-routeros/routeros/v3 v3.0.1
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/neilotoole/slogt v1.1.0
